@@ -54,7 +54,7 @@
 
     /* Estilos de la App principal */
     #mainApp {
-      display: none; /* Oculto hasta que se elija idioma */
+      display: none;
       max-width: 700px;
       margin: 40px auto;
       padding: 30px;
@@ -80,12 +80,13 @@
 </head>
 <body>
 
-  <!-- PANTALLA DE SELECCIÓN DE IDIOMA -->
+  <!-- PANTALLA DE SELECCIÓN DE IDIOMA (SOLO INGLÉS) -->
   <div id="languageModal">
     <div class="modal-content">
-      <h2>Welcome / Bienvenido</h2>
-      <p>Please select your preferred language<br>Por favor, selecciona tu idioma</p>
+      <h2>Welcome</h2>
+      <p>Please select your preferred language</p>
       <select id="langSelect">
+        <option value="en">English</option>
         <option value="es">Español (Spanish)</option>
         <option value="pl">Polski (Polish)</option>
         <option value="ro">Română (Romanian)</option>
@@ -97,7 +98,7 @@
         <option value="lt">Lietuvių (Lithuanian)</option>
         <option value="uk">Українська (Ukrainian)</option>
       </select>
-      <button onclick="startApp()">Start / Empezar</button>
+      <button onclick="startApp()">Start</button>
     </div>
   </div>
 
@@ -108,36 +109,83 @@
 
     <form id="disputeForm" onsubmit="event.preventDefault(); alert('Conexión con IA próximamente...');">
       
-      <label id="lbl-name" for="tenantName">Your Name / :</label>
+      <label id="lbl-name" for="tenantName">Your Name:</label>
       <input type="text" id="tenantName" required>
 
-      <label id="lbl-landlord" for="landlordName">Landlord or Agency Name / :</label>
+      <label id="lbl-landlord" for="landlordName">Landlord or Agency Name:</label>
       <input type="text" id="landlordName" required>
 
-      <label id="lbl-issue" for="issueCategory">Issue Type / :</label>
+      <label id="lbl-issue" for="issueCategory">Issue Type:</label>
       <select id="issueCategory">
-        <option id="opt-deposit" value="deposit">Deposit Retention / </option>
-        <option id="opt-damp" value="damp">Damp and Mould / </option>
-        <option id="opt-heating" value="heating">Broken Heating or Hot Water / </option>
-        <option id="opt-repairs" value="repairs">General Repairs Needed / </option>
+        <option id="opt-deposit" value="deposit">Deposit Retention</option>
+        <option id="opt-damp" value="damp">Damp and Mould</option>
+        <option id="opt-heating" value="heating">Broken Heating or Hot Water</option>
+        <option id="opt-repairs" value="repairs">General Repairs Needed</option>
       </select>
 
-      <label id="lbl-desc" for="userStory">Describe your problem / :</label>
-      <div id="hint-desc" class="hint">Explain what happened, dates, and required solution...</div>
+      <label id="lbl-desc" for="userStory">Describe your problem:</label>
+      <div id="hint-desc" class="hint">Explain what happened, dates, and required solution.</div>
       <textarea id="userStory" rows="6" required></textarea>
 
-      <button type="submit" id="btn-submit" class="btn-generate">Generate Formal Dispute Letter / </button>
+      <button type="submit" id="btn-submit" class="btn-generate">Generate Formal Dispute Letter</button>
     </form>
   </div>
 
-  <!-- CÓDIGO JAVASCRIPT (EL "CEREBRO" DE LOS IDIOMAS) -->
+  <!-- CÓDIGO JAVASCRIPT (LÓGICA DEL IDIOMA) -->
   <script>
-    // Diccionario de traducciones
     const translations = {
-      es: {
-        subtitle: "Generador de Cartas de Reclamación para Inquilinos", name: "Tu Nombre", landlord: "Nombre del Casero o Agencia",
-        issue: "Tipo de Problema", deposit: "Retención de Fianza", damp: "Humedades y Moho", heating: "Falta de Calefacción o Agua Caliente",
-        repairs: "Reparaciones Generales", desc: "Describe tu problema", hint: "Explica qué pasó, las fechas y qué solución necesitas. La IA generará la carta legal en inglés formal.", placeholder: "Ejemplo: Llevo 3 semanas sin calefacción...", btn: "
+      es: { subtitle: "Generador de Cartas de Reclamación para Inquilinos", name: "Tu Nombre", landlord: "Nombre del Casero o Agencia", issue: "Tipo de Problema", deposit: "Retención de Fianza", damp: "Humedades y Moho", heating: "Falta de Calefacción o Agua Caliente", repairs: "Reparaciones Generales", desc: "Describe tu problema", hint: "Explica qué pasó, las fechas y qué solución necesitas. La IA generará la carta legal en inglés formal.", placeholder: "Ejemplo: Llevo 3 semanas sin calefacción...", btn: "Generar Carta Formal" },
+      pl: { subtitle: "Generator Listów Spornych dla Najemców", name: "Twoje Imię", landlord: "Nazwa Wynajmującego lub Agencji", issue: "Rodzaj Problemu", deposit: "Zatrzymanie Kaucji", damp: "Wilgoć i Pleśń", heating: "Brak Ogrzewania lub Ciepłej Wody", repairs: "Ogólne Naprawy", desc: "Opisz swój problem", hint: "Wyjaśnij co się stało, podaj daty i jakiego rozwiązania oczekujesz.", placeholder: "Przykład: Od 3 tygodni nie mam ogrzewania...", btn: "Wygeneruj Formalny List" },
+      ro: { subtitle: "Generator de Scrisori de Dispută pentru Chiriași", name: "Numele Tău", landlord: "Numele Proprietarului sau Agenției", issue: "Tipul Problemei", deposit: "Reținerea Garanției", damp: "Umezeală și Mucegai", heating: "Lipsă Căldură sau Apă Caldă", repairs: "Reparații Generale", desc: "Descrie problema ta", hint: "Explică ce s-a întâmplat, datele și ce soluție dorești.", placeholder: "Exemplu: Nu am căldură de 3 săptămâni...", btn: "Generează Scrisoare Formală" },
+      pt: { subtitle: "Gerador de Cartas de Reclamação para Inquilinos", name: "Teu Nome", landlord: "Nome do Senhorio ou Agência", issue: "Tipo de Problema", deposit: "Retenção de Caução", damp: "Humidade e Bolor", heating: "Falta de Aquecimento ou Água Quente", repairs: "Reparações Gerais", desc: "Descreve o teu problema", hint: "Explica o que aconteceu, as datas e que solução precisas.", placeholder: "Exemplo: Estou sem aquecimento há 3 semanas...", btn: "Gerar Carta Formal" },
+      it: { subtitle: "Generatore di Lettere di Contestazione per Inquilini", name: "Il Tuo Nome", landlord: "Nome del Proprietario o Agenzia", issue: "Tipo di Problema", deposit: "Trattenuta della Caparra", damp: "Umidità e Muffa", heating: "Mancanza di Riscaldamento", repairs: "Riparazioni Generali", desc: "Descrivi il tuo problema", hint: "Spiega cosa è successo, le date e quale soluzione cerchi.", placeholder: "Esempio: Sono senza riscaldamento da 3 settimane...", btn: "Genera Lettera Formale" },
+      fr: { subtitle: "Générateur de Lettres de Litige pour Locataires", name: "Votre Nom", landlord: "Nom du Propriétaire ou Agence", issue: "Type de Problème", deposit: "Retenue de Caution", damp: "Humidité et Moisissure", heating: "Pas de Chauffage", repairs: "Réparations Générales", desc: "Décrivez votre problème", hint: "Expliquez ce qui s'est passé, les dates et la solution attendue.", placeholder: "Exemple : Je n'ai pas de chauffage depuis 3 semaines...", btn: "Générer Lettre Formelle" },
+      de: { subtitle: "Beschwerdebrief-Generator für Mieter", name: "Dein Name", landlord: "Name des Vermieters", issue: "Art des Problems", deposit: "Einbehaltene Kaution", damp: "Feuchtigkeit und Schimmel", heating: "Keine Heizung oder Warmwasser", repairs: "Allgemeine Reparaturen", desc: "Beschreibe dein Problem", hint: "Erkläre, was passiert ist, die Daten und die benötigte Lösung.", placeholder: "Beispiel: Ich habe seit 3 Wochen keine Heizung...", btn: "Formellen Brief Generieren" },
+      bg: { subtitle: "Генератор на Жалби за Наематели", name: "Твоето Име", landlord: "Име на Хазяин или Агенция", issue: "Тип Проблем", deposit: "Задържане на Депозит", damp: "Влага и Мухъл", heating: "Липса на Отопление", repairs: "Общи Ремонти", desc: "Опишете вашия проблем", hint: "Обяснете какво се е случило, датите и какво решение търсите.", placeholder: "Пример: Нямам отопление от 3 седмици...", btn: "Генериране на Формално Писмо" },
+      lt: { subtitle: "Nuomininkų Skundų Laiškų Generatorius", name: "Tavo Vardas", landlord: "Nuomotojo Pavadinimas", issue: "Problemos Tipas", deposit: "Užstato Sulaikymas", damp: "Drėgmė ir Pelėsis", heating: "Nėra Šildymo", repairs: "Bendrieji Taisymai", desc: "Apibūdinkite problemą", hint: "Paaiškinkite, kas nutiko, datas ir kokio sprendimo reikia.", placeholder: "Pavyzdys: Jau 3 savaites neturiu šildymo...", btn: "Generuoti Oficialų Laišką" },
+      uk: { subtitle: "Генератор Скарг для Орендарів", name: "Ваше Ім'я", landlord: "Ім'я Орендодавця", issue: "Тип Проблеми", deposit: "Утримання Депозиту", damp: "Вогкість і Цвіль", heating: "Відсутність Опалення", repairs: "Загальний Ремонт", desc: "Опишіть проблему", hint: "Поясніть, що сталося, дати та яке рішення потрібне.", placeholder: "Приклад: Я без опалення 3 тижні...", btn: "Згенерувати Офіційний Лист" }
+    };
+
+    function startApp() {
+      const langCode = document.getElementById("langSelect").value;
+      
+      document.getElementById("languageModal").style.display = "none";
+      document.getElementById("mainApp").style.display = "block";
+
+      if (langCode === 'en') {
+        // Si es inglés, no añadimos traducciones
+        document.getElementById("ui-subtitle").innerText = "Dispute Letter Generator";
+        document.getElementById("lbl-name").innerText = "Your Name:";
+        document.getElementById("tenantName").placeholder = "e.g. Alex Garcia";
+        document.getElementById("lbl-landlord").innerText = "Landlord or Agency Name:";
+        document.getElementById("lbl-issue").innerText = "Issue Type:";
+        document.getElementById("opt-deposit").innerText = "Deposit Retention";
+        document.getElementById("opt-damp").innerText = "Damp and Mould";
+        document.getElementById("opt-heating").innerText = "Broken Heating or Hot Water";
+        document.getElementById("opt-repairs").innerText = "General Repairs Needed";
+        document.getElementById("lbl-desc").innerText = "Describe your problem:";
+        document.getElementById("hint-desc").innerText = "Explain what happened, dates, and required solution.";
+        document.getElementById("userStory").placeholder = "Example: I have been without heating for 3 weeks...";
+        document.getElementById("btn-submit").innerText = "Generate Formal Dispute Letter";
+      } else {
+        // Si es otro idioma, aplicamos el formato bilingüe (Inglés / Idioma)
+        const t = translations[langCode];
+        document.getElementById("ui-subtitle").innerText = "Dispute Letter Generator / " + t.subtitle;
+        document.getElementById("lbl-name").innerText = "Your Name / " + t.name + ":";
+        document.getElementById("tenantName").placeholder = "e.g. Alex Garcia";
+        document.getElementById("lbl-landlord").innerText = "Landlord or Agency Name / " + t.landlord + ":";
+        document.getElementById("lbl-issue").innerText = "Issue Type / " + t.issue + ":";
+        document.getElementById("opt-deposit").innerText = "Deposit Retention / " + t.deposit;
+        document.getElementById("opt-damp").innerText = "Damp and Mould / " + t.damp;
+        document.getElementById("opt-heating").innerText = "Broken Heating or Hot Water / " + t.heating;
+        document.getElementById("opt-repairs").innerText = "General Repairs Needed / " + t.repairs;
+        document.getElementById("lbl-desc").innerText = "Describe your problem / " + t.desc + ":";
+        document.getElementById("hint-desc").innerText = "Explain what happened, dates, and required solution.\n" + t.hint;
+        document.getElementById("userStory").placeholder = t.placeholder;
+        document.getElementById("btn-submit").innerText = "Generate Formal Dispute Letter / " + t.btn;
+      }
+    }
+  </script>
 
 </body>
 </html>
