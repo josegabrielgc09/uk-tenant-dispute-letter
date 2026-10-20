@@ -83,7 +83,7 @@
 
     <div class="api-key-box">
       <label id="lbl-api" for="apiKey" style="margin-top: 0;">Google Gemini API Key (Required):</label>
-      <div class="hint">Your key is not stored. It is only used locally to contact Gemini.</div>
+      <div class="hint">Your key is not stored on any server. It is only remembered on your own device.</div>
       <input type="password" id="apiKey" placeholder="AIzaSy..." required>
     </div>
 
@@ -170,6 +170,12 @@
     let originalButtonText = "Generate Formal Dispute Letter";
 
     window.addEventListener("DOMContentLoaded", () => {
+      // Autorellenar la clave si ya fue guardada previamente en este navegador
+      const storedKey = localStorage.getItem("gemini_saved_key");
+      if (storedKey) {
+        document.getElementById("apiKey").value = storedKey;
+      }
+
       // Verificar si el usuario viene de completar un pago en Stripe
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get("payment_success") === "true") {
@@ -181,7 +187,6 @@
           document.getElementById("generatedLetter").value = savedLetter;
           document.getElementById("paymentSuccessNotice").style.display = "block";
 
-          // Descarga automática inmediata
           setTimeout(() => {
             downloadLetterPDF();
           }, 800);
@@ -229,6 +234,9 @@
         alert("Please enter your Google Gemini API Key.");
         return;
       }
+
+      // Guardar en la memoria local del navegador personal para no tener que volver a escribirla
+      localStorage.setItem("gemini_saved_key", apiKey);
 
       btnSubmit.innerText = "Generating Letter... Please wait...";
       btnSubmit.disabled = true;
@@ -282,7 +290,6 @@ Instructions:
         alert("Please generate a letter first.");
         return;
       }
-      // Guardar el contenido en el navegador para recuperarlo tras el pago
       localStorage.setItem("tenant_dispute_letter", letterText);
     }
 
