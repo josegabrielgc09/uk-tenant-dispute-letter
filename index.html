@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UK Tenant Dispute Letter Generator</title>
   
-  <!-- Librería para compilar el PDF directamente en el navegador -->
+  <!-- Librería para generar el PDF oficial tras el pago -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
@@ -31,19 +31,112 @@
     .btn-generate:disabled { background-color: #a0aec0; cursor: not-allowed; }
     
     #outputSection { display: none; margin-top: 30px; border-top: 2px solid #e2e8f0; padding-top: 20px; }
-    #generatedLetter { width: 100%; height: 280px; padding: 15px; font-family: "Times New Roman", Times, serif; font-size: 15px; border: 1px solid #cbd5e0; border-radius: 4px; background-color: #f8fafc; line-height: 1.5; white-space: pre-wrap; }
-    
-    /* Panel de Monetización y Descarga */
-    .premium-box { background: #fff8e6; border: 2px solid #f6ad55; border-radius: 8px; padding: 20px; margin-top: 20px; text-align: center; }
-    .premium-box h3 { margin-top: 0; color: #b7791f; }
-    .btn-pay-pdf { background-color: #38a169; color: white; border: none; padding: 14px 28px; font-size: 17px; border-radius: 6px; cursor: pointer; font-weight: bold; display: inline-block; text-decoration: none; margin: 10px 5px; }
-    .btn-pay-pdf:hover { background-color: #2f855a; }
-    .btn-test-free { background-color: #718096; color: white; border: none; padding: 10px 18px; font-size: 14px; border-radius: 6px; cursor: pointer; margin: 5px; }
-    .btn-copy { background-color: #4a5568; color: white; border: none; padding: 10px 20px; font-size: 15px; border-radius: 4px; cursor: pointer; margin-top: 10px; }
-    
-    .success-alert { background: #c6f6d5; border: 1px solid #38a169; color: #22543d; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; display: none; }
 
-    #pdfTemplate { display: none; background: white; padding: 40px; font-family: "Times New Roman", Times, serif; font-size: 12pt; color: #000; line-height: 1.4; }
+    /* CONTENEDOR DE PROTECCIÓN DE PAGO (PAYWALL) */
+    .preview-container {
+      position: relative;
+      margin-top: 20px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f8fafc;
+    }
+    
+    /* Texto con efecto borroso y anti-copia */
+    .blurred-document {
+      filter: blur(5px);
+      user-select: none;
+      -webkit-user-select: none;
+      pointer-events: none;
+      padding: 25px;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 14px;
+      line-height: 1.6;
+      max-height: 380px;
+      overflow: hidden;
+      color: #2d3748;
+      white-space: pre-wrap;
+    }
+
+    /* Caja flotante de bloqueo con botón de pago */
+    .paywall-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.75);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .paywall-card {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      border: 2px solid #38a169;
+      max-width: 480px;
+      width: 90%;
+    }
+
+    .paywall-card h3 {
+      margin-top: 0;
+      color: #22543d;
+      font-size: 20px;
+    }
+
+    .paywall-card p {
+      font-size: 14px;
+      color: #4a5568;
+      margin-bottom: 20px;
+    }
+
+    .btn-pay-pdf {
+      background-color: #38a169;
+      color: white;
+      border: none;
+      padding: 16px 28px;
+      font-size: 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      display: block;
+      text-decoration: none;
+      box-shadow: 0 4px 6px rgba(56, 161, 105, 0.3);
+      transition: background 0.2s;
+    }
+
+    .btn-pay-pdf:hover {
+      background-color: #2f855a;
+    }
+
+    .success-alert {
+      background: #c6f6d5;
+      border: 1px solid #38a169;
+      color: #22543d;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-weight: bold;
+      text-align: center;
+      display: none;
+    }
+
+    #pdfTemplate {
+      display: none;
+      background: white;
+      padding: 40px;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 12pt;
+      color: #000;
+      line-height: 1.4;
+    }
   </style>
 </head>
 <body>
@@ -52,7 +145,7 @@
   <div id="languageModal">
     <div class="modal-content">
       <h2>Select Your Language</h2>
-      <p>Choose your native language. You can fill out the form in your language, and the AI will draft a formal legal dispute letter in British English.</p>
+      <p>Choose your native language. Fill out the form in your own language, and the AI will draft a complete legal dispute letter in British English.</p>
       <select id="langSelect">
         <option value="en">English (Default)</option>
         <option value="es">Español (Spanish)</option>
@@ -72,8 +165,9 @@
 
   <!-- APLICACIÓN PRINCIPAL -->
   <div id="mainApp">
+    <!-- ALERTA TRAS EL PAGO -->
     <div id="paymentSuccessNotice" class="success-alert">
-      ✅ Payment verified! Your official legal PDF letter is downloading now.
+      ✅ Payment verified! Your official legal dispute PDF is downloading automatically.
     </div>
 
     <h1>UK Tenant Dispute Letter Generator</h1>
@@ -86,11 +180,17 @@
     </div>
 
     <form id="disputeForm" onsubmit="generateLetter(event)">
-      <label id="lbl-name" for="tenantName">Your Name:</label>
-      <input type="text" id="tenantName" required>
+      <label id="lbl-name" for="tenantName">Your Full Name:</label>
+      <input type="text" id="tenantName" placeholder="e.g. Jose Gabriel" required>
 
-      <label id="lbl-landlord" for="landlordName">Landlord or Agency Name:</label>
-      <input type="text" id="landlordName" required>
+      <label id="lbl-address" for="tenantAddress">Your Address in the UK:</label>
+      <input type="text" id="tenantAddress" placeholder="e.g. Flat 4, 15 High Street, London, E1 6AN" required>
+
+      <label id="lbl-landlord" for="landlordName">Landlord or Letting Agency Name:</label>
+      <input type="text" id="landlordName" placeholder="e.g. Acme Properties Ltd" required>
+
+      <label id="lbl-landlord-address" for="landlordAddress">Landlord or Agency Address:</label>
+      <input type="text" id="landlordAddress" placeholder="e.g. 100 Commercial Road, London, EC1 2AB" required>
 
       <label id="lbl-issue" for="issueCategory">Issue Type:</label>
       <select id="issueCategory">
@@ -102,33 +202,35 @@
 
       <label id="lbl-desc" for="userStory">Describe your problem:</label>
       <div id="hint-desc" class="hint">Explain what happened, dates, and what you demand. The AI converts it into formal UK legal language.</div>
-      <textarea id="userStory" rows="6" required></textarea>
+      <textarea id="userStory" rows="6" placeholder="Describe the dispute in your own words..." required></textarea>
 
       <button type="submit" id="btn-submit" class="btn-generate">Generate Formal Dispute Letter</button>
     </form>
 
+    <!-- SECCIÓN DE RESULTADO BLOQUEADO (PAYWALL) -->
     <div id="outputSection">
-      <h2 id="lbl-result">Generated Dispute Letter</h2>
-      <textarea id="generatedLetter" readonly></textarea>
-      <button type="button" id="btn-copy" class="btn-copy" onclick="copyLetter()">📋 Copy Text</button>
+      <h2 id="lbl-result">Your Formal Legal Letter is Ready</h2>
+      
+      <div class="preview-container">
+        <!-- VISTA BORROSA DEL TEXTO COMPLETO -->
+        <div id="blurredPreview" class="blurred-document" oncopy="return false" oncut="return false" onpaste="return false"></div>
 
-      <div class="premium-box">
-        <h3 id="lbl-prem-title">📄 Need an Official Court-Ready Document?</h3>
-        <p id="lbl-prem-desc">Download this letter professionally formatted as a formal UK Legal Notice (A4 PDF with statutory reference headers and signature space) ready to print or email.</p>
-        
-        <a id="stripeBuyBtn" href="https://buy.stripe.com/test_5kQ3cx2u77bG7V4fnccwg00" class="btn-pay-pdf" onclick="saveLetterBeforePayment(event)">
-          💳 Download Official Legal PDF (£2.99)
-        </a>
-        
-        <br>
-        <button type="button" class="btn-test-free" onclick="downloadLetterPDF()">
-          🛠️ Test / Preview PDF (Free Test Download)
-        </button>
+        <!-- CAPA DE COBRO BLOQUEANTE -->
+        <div id="paywallOverlay" class="paywall-overlay">
+          <div class="paywall-card">
+            <h3>🔒 Official Legal Notice Ready</h3>
+            <p>Your dispute letter has been compiled with relevant UK Housing Act citations, formal headers, and statutory deadlines. Unlock the complete, court-ready <strong>A4 PDF</strong>.</p>
+            
+            <a id="stripeBuyBtn" href="https://buy.stripe.com/test_5kQ3cx2u77bG7V4fnccwg00" class="btn-pay-pdf" onclick="saveLetterBeforePayment(event)">
+              Unlock & Download Legal PDF (£2.99)
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- PLANTILLA OCULTA A4 -->
+  <!-- PLANTILLA OCULTA A4 PARA COMPILAR EL PDF TRAS EL PAGO -->
   <div id="pdfTemplate">
     <div style="border-bottom: 2px solid #1a365d; padding-bottom: 10px; margin-bottom: 25px;">
       <h2 style="margin: 0; color: #1a365d; font-size: 16pt; text-transform: uppercase;">Formal Notice of Tenancy Dispute</h2>
@@ -149,7 +251,9 @@
         api: "Clave de API de Google Gemini (Obligatorio)",
         hint_api: "Tu clave no se almacena en ningún servidor. Se memoriza de forma segura solo en tu navegador.",
         name: "Tu Nombre Completo",
+        address: "Tu Dirección de Vivienda en UK",
         landlord: "Nombre del Casero o Agencia",
+        landlord_address: "Dirección del Casero o Agencia",
         issue: "Tipo de Problema",
         deposit: "Retención Indebida de Fianza",
         damp: "Humedades y Moho",
@@ -158,175 +262,172 @@
         desc: "Describe tu problema en español",
         hint_desc: "Explica qué ocurrió, fechas y qué solución exiges. La IA redactará la carta formal en inglés legal británico.",
         btn: "Generar Carta Formal de Reclamación",
-        result: "Carta Generada (Inglés Formal)",
-        copy: "📋 Copiar Texto",
-        copied: "¡Carta copiada al portapapeles!"
+        result: "Tu Carta Legal Está Lista"
       },
       pl: {
-        subtitle: "Generator Pism Spornych dla Najemców w Wielkiej Brytanii",
+        subtitle: "Generator Pism Spornych dla Najemców w UK",
         api: "Klucz API Google Gemini (Wymagany)",
-        hint_api: "Twój klucz nie jest przechowywany na żadnym serwerze. Jest zapamiętywany tylko w tej przeglądarce.",
+        hint_api: "Twój klucz nie jest przechowywany na żadnym serwerze.",
         name: "Twoje Imię i Nazwisko",
+        address: "Twój Adres Wynajmowanego Lokalu w UK",
         landlord: "Nazwa Wynajmującego lub Agencji",
+        landlord_address: "Adres Wynajmującego lub Agencji",
         issue: "Rodzaj Problemu",
         deposit: "Zatrzymanie Kaucji (Deposit)",
         damp: "Wilgoć i Pleśń (Damp & Mould)",
         heating: "Brak Ogrzewania lub Ciepłej Wody",
         repairs: "Wymagane Naprawy w Lokalu",
         desc: "Opisz swój problem po polsku",
-        hint_desc: "Opisz sytuację, daty i żądane rozwiązanie. AI przygotuje oficjalne pismo prawne w języku angielskim.",
+        hint_desc: "Opisz sytuację, daty i żądane rozwiązanie.",
         btn: "Generuj Oficjalne Pismo",
-        result: "Wygenerowane Pismo (Formalny Angielski)",
-        copy: "📋 Kopiuj Tekst",
-        copied: "Skopiowano pismo do schowka!"
+        result: "Twoje Pismo Jest Gotowe"
       },
       ro: {
-        subtitle: "Generator de Notificări Legale pentru Chiriași în Marea Britanie",
+        subtitle: "Generator de Notificări Legale pentru Chiriași în UK",
         api: "Cheie API Google Gemini (Obligatoriu)",
-        hint_api: "Cheia nu este stocată pe servere. Este reținută în siguranță doar în acest browser.",
+        hint_api: "Cheia este reținută în siguranță doar în acest browser.",
         name: "Numele Tău Complet",
+        address: "Adresa Locuinței Tale din UK",
         landlord: "Numele Proprietarului sau Agenției",
+        landlord_address: "Adresa Proprietarului sau Agenției",
         issue: "Tipul Problemei",
         deposit: "Reținerea Ilegală a Garanției (Deposit)",
-        damp: "Igrasie și Mucegai (Damp and Mould)",
+        damp: "Igrasie și Mucegai (Damp & Mould)",
         heating: "Lipsă Încălzire sau Apă Caldă",
         repairs: "Reparații Necesare în Locuință",
         desc: "Descrie problema ta în română",
-        hint_desc: "Explică ce s-a întâmplat, datele și soluția cerută. AI va redacta scrisoarea oficială în engleză juridică.",
+        hint_desc: "Explică ce s-a întâmplat, datele și soluția cerută.",
         btn: "Generează Notificarea Oficială",
-        result: "Scrisoare Generată (Engleză Formală)",
-        copy: "📋 Copiază Textul",
-        copied: "Scrisoarea a fost copiată!"
+        result: "Notificarea Legală Este Gata"
       },
       pt: {
         subtitle: "Gerador de Notificações Legais para Inquilinos no Reino Unido",
         api: "Chave API do Google Gemini (Obrigatório)",
-        hint_api: "A sua chave não é guardada em servidores. Fica memorizada com segurança apenas neste navegador.",
+        hint_api: "A sua chave fica guardada apenas neste navegador.",
         name: "O Seu Nome Completo",
+        address: "A Sua Morada no Reino Unido",
         landlord: "Nome do Senhorio ou Imobiliária",
+        landlord_address: "Morada do Senhorio ou Imobiliária",
         issue: "Tipo de Problema",
-        deposit: "Retenção Indevida da Caução (Deposit)",
+        deposit: "Retenção Indevida da Caução",
         damp: "Humidade e Bolor (Damp & Mould)",
         heating: "Falta de Aquecimento ou Água Quente",
         repairs: "Reparações Necessárias no Imóvel",
         desc: "Descreva o seu problema em português",
-        hint_desc: "Explique o que aconteceu, datas e a solução exigida. A IA irá redigir a carta em inglês jurídico britânico.",
+        hint_desc: "Explique o que aconteceu, datas e a solução exigida.",
         btn: "Gerar Carta Formal de Disputa",
-        result: "Carta Gerada (Inglês Formal)",
-        copy: "📋 Copiar Texto",
-        copied: "Carta copiada para a área de transferência!"
+        result: "A Sua Carta Legal Está Pronta"
       },
       it: {
-        subtitle: "Generatore di Lettere di Reclamo per Inquilini nel Regno Unito",
+        subtitle: "Generatore di Lettere di Reclamo per Inquilini in UK",
         api: "Chiave API Google Gemini (Obbligatoria)",
-        hint_api: "La tua chiave non viene salvata su server. Rimane memorizzata in modo sicuro solo nel tuo browser.",
+        hint_api: "La chiave è salvata in locale.",
         name: "Il Tuo Nome e Cognome",
+        address: "Il Tuo Indirizzo in UK",
         landlord: "Nome del Proprietario o dell'Agenzia",
+        landlord_address: "Indirizzo del Proprietario o dell'Agenzia",
         issue: "Tipo di Controversia",
         deposit: "Trattenuta Indebita della Cauzione",
-        damp: "Umidità e Muffa (Damp & Mould)",
+        damp: "Umidità e Muffa",
         heating: "Mancanza di Riscaldamento o Acqua Calda",
-        repairs: "Riparazioni Necessarie nell'Immobile",
+        repairs: "Riparazioni Necessarie",
         desc: "Descrivi il tuo problema in italiano",
-        hint_desc: "Spiega cosa è successo, date e richiesta formale. L'IA redigerà la lettera formale in inglese giuridico.",
-        btn: "Genera Lettera Formale di Reclamo",
-        result: "Lettera Generata (Inglese Giuridico)",
-        copy: "📋 Copia Testo",
-        copied: "Lettera copiata negli appunti!"
+        hint_desc: "Spiega cosa è successo e le tue richieste.",
+        btn: "Genera Lettera Formale",
+        result: "La Lettera Legale è Pronta"
       },
       fr: {
-        subtitle: "Générateur de Mises en Demeure pour Locataires au Royaume-Uni",
+        subtitle: "Générateur de Mises en Demeure pour Locataires au UK",
         api: "Clé API Google Gemini (Obligatoire)",
-        hint_api: "Votre clé n'est pas stockée sur un serveur. Elle est conservée uniquement dans votre navigateur.",
+        hint_api: "Votre clé est conservée uniquement dans votre navigateur.",
         name: "Votre Nom Complet",
+        address: "Votre Adresse au Royaume-Uni",
         landlord: "Nom du Propriétaire ou de l'Agence",
+        landlord_address: "Adresse du Propriétaire ou de l'Agence",
         issue: "Type de Litige",
         deposit: "Retenue Indue du Dépôt de Garantie",
-        damp: "Humidité et Moisissures (Damp & Mould)",
+        damp: "Humidité et Moisissures",
         heating: "Panne de Chauffage ou d'Eau Chaude",
-        repairs: "Réparations Nécessaires dans le Logement",
+        repairs: "Réparations Nécessaires",
         desc: "Décrivez votre situation en français",
-        hint_desc: "Expliquez ce qui s'est passé, les dates et ce que vous exigez. L'IA rédigera la lettre officielle en anglais juridique.",
-        btn: "Générer la Lettre Formelle de Mise en Demeure",
-        result: "Lettre Générée (Anglais Formel)",
-        copy: "📋 Copier le Texte",
-        copied: "Lettre copiée dans le presse-papier !"
+        hint_desc: "Expliquez les faits, dates et vos exigences.",
+        btn: "Générer la Lettre Formelle",
+        result: "Votre Lettre Formelle est Prête"
       },
       de: {
         subtitle: "Mahn- und Beschwerdebrief-Generator für Mieter in UK",
         api: "Google Gemini API-Schlüssel (Erforderlich)",
-        hint_api: "Ihr Schlüssel wird nicht auf Servern gespeichert, sondern nur lokal in diesem Browser.",
+        hint_api: "Ihr Schlüssel wird nur lokal gespeichert.",
         name: "Ihr Vollständiger Name",
+        address: "Ihre Wohnadresse im Vereinigten Königreich",
         landlord: "Name des Vermieters oder der Agentur",
+        landlord_address: "Adresse des Vermieters oder der Agentur",
         issue: "Art des Problems",
-        deposit: "Einbehaltung der Kaution (Deposit)",
-        damp: "Feuchtigkeit und Schimmel (Damp & Mould)",
+        deposit: "Einbehaltung der Kaution",
+        damp: "Feuchtigkeit und Schimmel",
         heating: "Heizungs- oder Warmwasserausfall",
-        repairs: "Erforderliche Reparaturen in der Wohnung",
+        repairs: "Erforderliche Reparaturen",
         desc: "Beschreiben Sie Ihr Problem auf Deutsch",
-        hint_desc: "Geben Sie Daten, Vorfälle und Ihre Forderung an. Die KI verfasst das juristische Mahnschreiben auf Englisch.",
+        hint_desc: "Geben Sie Daten und Ihre Forderung an.",
         btn: "Formelles Mahnschreiben Erstellen",
-        result: "Erstelltes Schreiben (Britisches Rechtsenglisch)",
-        copy: "📋 Text Kopieren",
-        copied: "Text in die Zwischenablage kopiert!"
+        result: "Ihr Mahnschreiben ist Bereit"
       },
       bg: {
-        subtitle: "Генератор на официални жалби за наематели във Великобритания",
+        subtitle: "Генератор на официални жалби за наематели в UK",
         api: "Google Gemini API ключ (Задължително)",
-        hint_api: "Ключът не се запазва на сървъри. Остава сигурно запаметен само във вашия браузър.",
+        hint_api: "Ключът се пази само във вашия браузър.",
         name: "Вашето пълно име",
+        address: "Вашият адрес в Обединеното кралство",
         landlord: "Име на наемодателя или агенцията",
+        landlord_address: "Адрес на наемодателя или агенцията",
         issue: "Тип на спора",
         deposit: "Неправомерно задържан депозит",
-        damp: "Влага и мухъл (Damp & Mould)",
+        damp: "Влага и мухъл",
         heating: "Липса на отопление или топла вода",
-        repairs: "Необходими ремонти в жилището",
+        repairs: "Необходими ремонти",
         desc: "Опишете проблема си на български",
-        hint_desc: "Опишете какво се е случило, дати и вашите искания. AI ще генерира правно писмо на британски английски.",
+        hint_desc: "Опишете какво се е случило и вашите искания.",
         btn: "Генерирай официално писмо",
-        result: "Генерирано писмо (Официален английски)",
-        copy: "📋 Копирай текста",
-        copied: "Писмото е копирано!"
+        result: "Вашето правно писмо е готово"
       },
       lt: {
         subtitle: "Teisinių pretenzijų generatorius nuomininkams JK",
         api: "Google Gemini API raktas (Privaloma)",
-        hint_api: "Raktas nėra siunčiamas į serverius. Jis saugomas tik jūsų naršyklėje.",
+        hint_api: "Raktas saugomas tik naršyklėje.",
         name: "Jūsų vardas ir pavardė",
-        landlord: "Nuomotojo arba agentūros pavadinimas",
+        address: "Jūsų būsto adresas JK",
+        landlord: "Nuomotojo ar agentūros pavadinimas",
+        landlord_address: "Nuomotojo ar agentūros adresas",
         issue: "Problemos pobūdis",
-        deposit: "Netinkamas depozito užlaikymas",
-        damp: "Drėgmė ir pelėsis (Damp & Mould)",
+        deposit: "Užlaikytas depozitas",
+        damp: "Drėgmė ir pelėsis",
         heating: "Nėra šildymo ar karšto vandens",
-        repairs: "Reikalingas remontas būste",
+        repairs: "Reikalingas remontas",
         desc: "Aprašykite problemą lietuviškai",
-        hint_desc: "Nurodykite faktus, datas ir reikalavimus. DI parengs oficialų teisinį laišką anglų kalba.",
+        hint_desc: "Nurodykite faktus, datas ir reikalavimus.",
         btn: "Generuoti teisinę pretenziją",
-        result: "Sugeneruotas laiškas (Oficiali anglų k.)",
-        copy: "📋 Kopijuoti tekstą",
-        copied: "Tekstas nukopijuotas!"
+        result: "Jūsų teisinė pretenzija paruošta"
       },
       uk: {
-        subtitle: "Генератор офіційних претензій для орендарів у Великій Британії",
+        subtitle: "Генератор офіційних претензій для орендарів у UK",
         api: "Ключ Google Gemini API (Обов'язково)",
-        hint_api: "Ваш ключ не зберігається на сторонніх серверах. Він фіксується лише у вашому браузері.",
+        hint_api: "Ключ зберігається лише у вашому браузері.",
         name: "Ваше повне ім'я",
+        address: "Ваша адреса у Великій Британії",
         landlord: "Ім'я орендодавця або назва агенції",
+        landlord_address: "Адреса орендодавця або агенції",
         issue: "Тип проблеми",
-        deposit: "Неправомірне утримання депозиту",
-        damp: "Вогкість та пліснява (Damp & Mould)",
-        heating: "Відсутність опалення або гарячої води",
-        repairs: "Необхідний ремонт у житлі",
+        deposit: "Утримання депозиту",
+        damp: "Вогкість та пліснява",
+        heating: "Немає опалення або гарячої води",
+        repairs: "Потрібен ремонт",
         desc: "Опишіть вашу ситуацію українською",
-        hint_desc: "Опишіть проблему, дати та ваші вимоги. ШІ складе юридично вивірений лист британською англійською.",
+        hint_desc: "Опишіть проблему, дати та ваші вимоги.",
         btn: "Згенерувати офіційний лист",
-        result: "Згенерований лист (Офіційна англійська)",
-        copy: "📋 Скопіювати текст",
-        copied: "Лист скопійовано!"
+        result: "Ваш юридичний лист готовий"
       }
     };
 
-    let currentCopyAlert = "Letter copied to clipboard!";
     let originalButtonText = "Generate Formal Dispute Letter";
 
     window.addEventListener("DOMContentLoaded", () => {
@@ -335,6 +436,7 @@
         document.getElementById("apiKey").value = storedKey;
       }
 
+      // Si el cliente vuelve de Stripe tras pagar £2.99
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get("payment_success") === "true") {
         const savedLetter = localStorage.getItem("tenant_dispute_letter");
@@ -342,11 +444,21 @@
           document.getElementById("languageModal").style.display = "none";
           document.getElementById("mainApp").style.display = "block";
           document.getElementById("outputSection").style.display = "block";
-          document.getElementById("generatedLetter").value = savedLetter;
+          
+          // Desbloqueo: quitamos el efecto borroso y el overlay de pago
+          const blurredPreview = document.getElementById("blurredPreview");
+          blurredPreview.innerText = savedLetter;
+          blurredPreview.style.filter = "none";
+          blurredPreview.style.userSelect = "text";
+          blurredPreview.style.pointerEvents = "auto";
+          blurredPreview.style.maxHeight = "none";
+
+          document.getElementById("paywallOverlay").style.display = "none";
           document.getElementById("paymentSuccessNotice").style.display = "block";
 
+          // Descarga automática del PDF
           setTimeout(() => {
-            downloadLetterPDF();
+            downloadLetterPDF(savedLetter);
           }, 800);
         }
       }
@@ -363,7 +475,9 @@
         document.getElementById("lbl-api").innerText = t.api + ":";
         document.getElementById("hint-api").innerText = t.hint_api;
         document.getElementById("lbl-name").innerText = t.name + ":";
+        document.getElementById("lbl-address").innerText = t.address + ":";
         document.getElementById("lbl-landlord").innerText = t.landlord + ":";
+        document.getElementById("lbl-landlord-address").innerText = t.landlord_address + ":";
         document.getElementById("lbl-issue").innerText = t.issue + ":";
         document.getElementById("opt-deposit").innerText = t.deposit;
         document.getElementById("opt-damp").innerText = t.damp;
@@ -374,8 +488,6 @@
         originalButtonText = t.btn;
         document.getElementById("btn-submit").innerText = originalButtonText;
         document.getElementById("lbl-result").innerText = t.result;
-        document.getElementById("btn-copy").innerText = t.copy;
-        currentCopyAlert = t.copied;
       }
     }
 
@@ -384,12 +496,14 @@
 
       const apiKey = document.getElementById("apiKey").value.trim();
       const tenantName = document.getElementById("tenantName").value;
+      const tenantAddress = document.getElementById("tenantAddress").value;
       const landlordName = document.getElementById("landlordName").value;
+      const landlordAddress = document.getElementById("landlordAddress").value;
       const issueType = document.getElementById("issueCategory").value;
       const userStory = document.getElementById("userStory").value;
       const btnSubmit = document.getElementById("btn-submit");
       const outputSection = document.getElementById("outputSection");
-      const generatedLetter = document.getElementById("generatedLetter");
+      const blurredPreview = document.getElementById("blurredPreview");
 
       if (!apiKey) {
         alert("Please enter your Google Gemini API Key.");
@@ -398,20 +512,33 @@
 
       localStorage.setItem("gemini_saved_key", apiKey);
 
-      btnSubmit.innerText = "Generating Letter... Please wait...";
+      btnSubmit.innerText = "Drafting Court-Ready Legal Notice...";
       btnSubmit.disabled = true;
 
-      const promptText = `You are an expert British housing lawyer. Your task is to write a highly formal and legally sound dispute letter from a tenant to their landlord or agency.
-Tenant Name: ${tenantName}
-Landlord/Agency Name: ${landlordName}
-Issue Category: ${issueType}
-User's Story (adapt from any language into formal English): ${userStory}
+      const today = new Date();
+      const formattedDate = today.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
-Instructions:
-1. Write ONLY the formal letter in British English. Do not include markdown formatting fences (like \`\`\`) or introductory comments.
-2. Naturally cite relevant UK housing legislation (e.g. Housing Act 2004 / Tenant Fees Act 2019 for deposit protection, Section 11 of the Landlord and Tenant Act 1985 for repairs, or Homes (Fitness for Human Habitation) Act 2018).
-3. Tone must be professional, assertive, and legal.
-4. Include formal placeholders for date and address: [Current Date] and [Tenant Address].`;
+      const promptText = `You are a specialist British housing solicitor. Write a comprehensive, strictly formal dispute letter (Letter Before Action) in British English from a tenant to their landlord or letting agency.
+
+Tenant Name: ${tenantName}
+Tenant Full Address: ${tenantAddress}
+Landlord / Agency Name: ${landlordName}
+Landlord / Agency Address: ${landlordAddress}
+Date of Notice: ${formattedDate}
+Issue Category: ${issueType}
+Tenant's Description of the Dispute (adapt into formal legal language): ${userStory}
+
+CRITICAL RULES:
+1. DO NOT use square brackets, placeholders, or generic tags (e.g. NEVER output "[Tenant Address]", "[Landlord Address]", "[Current Date]", or "[Insert Date]"). Insert the exact names, addresses, and dates provided above directly into the header, body, and signature.
+2. In the recipient line, use "${landlordName}". In the salutation, use "Dear ${landlordName}," or formal equivalent.
+3. In the reference block (RE:), specify the Property Address as "${tenantAddress}".
+4. Calculate and state explicit deadlines directly from the date ${formattedDate} (e.g. for a 14-day deadline, compute the exact calendar day).
+5. Explicitly cite statutory UK housing legislation:
+   - For Deposit Retention: Sections 212–215 and Section 214 penalties of Housing Act 2004, and Tenant Fees Act 2019.
+   - For Heating / Hot Water / Disrepair: Section 11 of Landlord and Tenant Act 1985, Section 9A (Fitness for Human Habitation Act 2018), and Category 1 Hazards under HHSRS.
+   - For Mould/Damp: Environmental Protection Act 1990 (statutory nuisance) and Awaab's Law / Housing Act provisions.
+6. The letter must conclude with a formal sign-off: "Yours sincerely," followed by "${tenantName}".
+7. Return ONLY the letter body. Do not include markdown code fences (no \`\`\`), notes, or introductory chit-chat.`;
 
       try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
@@ -426,8 +553,14 @@ Instructions:
         if (data.error) throw new Error(data.error.message);
 
         const letter = data.candidates[0].content.parts[0].text;
-        generatedLetter.value = letter;
+        
+        // Guardar el texto generado en la memoria
+        localStorage.setItem("tenant_dispute_letter", letter);
+        
+        // Mostrar vista borrosa bloqueada
+        blurredPreview.innerText = letter;
         outputSection.style.display = "block";
+        outputSection.scrollIntoView({ behavior: 'smooth' });
       } catch (error) {
         alert("Error: " + error.message);
       } finally {
@@ -436,32 +569,21 @@ Instructions:
       }
     }
 
-    function copyLetter() {
-      const letterText = document.getElementById("generatedLetter").value;
-      navigator.clipboard.writeText(letterText).then(() => {
-        alert(currentCopyAlert);
-      });
-    }
-
     function saveLetterBeforePayment(event) {
-      const letterText = document.getElementById("generatedLetter").value;
-      if (!letterText) {
+      const savedLetter = localStorage.getItem("tenant_dispute_letter");
+      if (!savedLetter) {
         event.preventDefault();
-        alert("Please generate a letter first.");
+        alert("Please generate your letter first.");
         return;
       }
-      localStorage.setItem("tenant_dispute_letter", letterText);
     }
 
-    function downloadLetterPDF() {
-      const letterText = document.getElementById("generatedLetter").value;
-      if (!letterText) {
-        alert("Please generate a letter first.");
-        return;
-      }
+    function downloadLetterPDF(letterText) {
+      const textToRender = letterText || localStorage.getItem("tenant_dispute_letter");
+      if (!textToRender) return;
 
       const pdfContainer = document.getElementById("pdfTemplate");
-      document.getElementById("pdfLetterBody").innerText = letterText;
+      document.getElementById("pdfLetterBody").innerText = textToRender;
       pdfContainer.style.display = "block";
 
       const opt = {
