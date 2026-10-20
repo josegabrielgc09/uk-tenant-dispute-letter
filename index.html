@@ -5,15 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UK Tenant Dispute Letter Generator</title>
   
-  <!-- Librería para generar el PDF directamente en el navegador -->
+  <!-- Librería para compilar el PDF directamente en el navegador -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f7f6; margin: 0; padding: 0; }
     #languageModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(26, 54, 93, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 1000; }
-    .modal-content { background: white; color: #333; padding: 40px; border-radius: 8px; text-align: center; max-width: 400px; width: 90%; }
-    .modal-content select { width: 100%; padding: 12px; font-size: 16px; margin: 20px 0; }
-    .modal-content button { width: 100%; background-color: #2b6cb0; color: white; border: none; padding: 15px; font-size: 18px; border-radius: 4px; cursor: pointer; }
+    .modal-content { background: white; color: #333; padding: 40px; border-radius: 8px; text-align: center; max-width: 420px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .modal-content h2 { margin-top: 0; color: #1a365d; }
+    .modal-content select { width: 100%; padding: 12px; font-size: 16px; margin: 20px 0; border: 1px solid #cbd5e0; border-radius: 4px; }
+    .modal-content button { width: 100%; background-color: #2b6cb0; color: white; border: none; padding: 15px; font-size: 18px; border-radius: 4px; cursor: pointer; font-weight: bold; }
     .modal-content button:hover { background-color: #2c5282; }
     
     #mainApp { display: none; max-width: 750px; margin: 40px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -40,22 +41,20 @@
     .btn-test-free { background-color: #718096; color: white; border: none; padding: 10px 18px; font-size: 14px; border-radius: 6px; cursor: pointer; margin: 5px; }
     .btn-copy { background-color: #4a5568; color: white; border: none; padding: 10px 20px; font-size: 15px; border-radius: 4px; cursor: pointer; margin-top: 10px; }
     
-    /* Notificación de pago exitoso */
     .success-alert { background: #c6f6d5; border: 1px solid #38a169; color: #22543d; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; display: none; }
 
-    /* Plantilla oculta maquetada en formato folio A4 para el PDF */
     #pdfTemplate { display: none; background: white; padding: 40px; font-family: "Times New Roman", Times, serif; font-size: 12pt; color: #000; line-height: 1.4; }
   </style>
 </head>
 <body>
 
-  <!-- MODAL DE SELECCIÓN DE IDIOMA -->
+  <!-- MODAL DE IDIOMA -->
   <div id="languageModal">
     <div class="modal-content">
-      <h2>Welcome</h2>
-      <p>Please select your preferred language</p>
+      <h2>Select Your Language</h2>
+      <p>Choose your native language. You can fill out the form in your language, and the AI will draft a formal legal dispute letter in British English.</p>
       <select id="langSelect">
-        <option value="en">English</option>
+        <option value="en">English (Default)</option>
         <option value="es">Español (Spanish)</option>
         <option value="pl">Polski (Polish)</option>
         <option value="ro">Română (Romanian)</option>
@@ -67,15 +66,14 @@
         <option value="lt">Lietuvių (Lithuanian)</option>
         <option value="uk">Українська (Ukrainian)</option>
       </select>
-      <button onclick="startApp()">Start</button>
+      <button onclick="startApp()">Continue</button>
     </div>
   </div>
 
   <!-- APLICACIÓN PRINCIPAL -->
   <div id="mainApp">
-    <!-- ALERTA DE PAGO COMPLETADO -->
     <div id="paymentSuccessNotice" class="success-alert">
-      ✅ Payment verified! Your official PDF letter is downloading now.
+      ✅ Payment verified! Your official legal PDF letter is downloading now.
     </div>
 
     <h1>UK Tenant Dispute Letter Generator</h1>
@@ -83,7 +81,7 @@
 
     <div class="api-key-box">
       <label id="lbl-api" for="apiKey" style="margin-top: 0;">Google Gemini API Key (Required):</label>
-      <div class="hint">Your key is not stored on any server. It is only remembered on your own device.</div>
+      <div id="hint-api" class="hint">Your key is never stored on servers. It is remembered securely only in this browser session.</div>
       <input type="password" id="apiKey" placeholder="AIzaSy..." required>
     </div>
 
@@ -103,30 +101,26 @@
       </select>
 
       <label id="lbl-desc" for="userStory">Describe your problem:</label>
-      <div id="hint-desc" class="hint">Explain what happened, dates, and required solution.</div>
+      <div id="hint-desc" class="hint">Explain what happened, dates, and what you demand. The AI converts it into formal UK legal language.</div>
       <textarea id="userStory" rows="6" required></textarea>
 
       <button type="submit" id="btn-submit" class="btn-generate">Generate Formal Dispute Letter</button>
     </form>
 
-    <!-- RESULTADO GENERADO -->
     <div id="outputSection">
       <h2 id="lbl-result">Generated Dispute Letter</h2>
       <textarea id="generatedLetter" readonly></textarea>
-      <button type="button" class="btn-copy" onclick="copyLetter()">📋 Copy Text</button>
+      <button type="button" id="btn-copy" class="btn-copy" onclick="copyLetter()">📋 Copy Text</button>
 
-      <!-- SECCIÓN MONETIZACIÓN / PDF DE PAGO -->
       <div class="premium-box">
-        <h3>📄 Need an Official Court-Ready Document?</h3>
-        <p>Download this letter professionally formatted as a formal UK Legal Notice (A4 PDF with statutory reference headers and signature space) ready to print or email.</p>
+        <h3 id="lbl-prem-title">📄 Need an Official Court-Ready Document?</h3>
+        <p id="lbl-prem-desc">Download this letter professionally formatted as a formal UK Legal Notice (A4 PDF with statutory reference headers and signature space) ready to print or email.</p>
         
-        <!-- Botón de compra conectado a Stripe -->
         <a id="stripeBuyBtn" href="https://buy.stripe.com/test_5kQ3cx2u77bG7V4fnccwg00" class="btn-pay-pdf" onclick="saveLetterBeforePayment(event)">
           💳 Download Official Legal PDF (£2.99)
         </a>
         
         <br>
-        <!-- Botón de test gratuito -->
         <button type="button" class="btn-test-free" onclick="downloadLetterPDF()">
           🛠️ Test / Preview PDF (Free Test Download)
         </button>
@@ -134,7 +128,7 @@
     </div>
   </div>
 
-  <!-- PLANTILLA OCULTA PARA COMPILAR EL PDF FORMAL A4 -->
+  <!-- PLANTILLA OCULTA A4 -->
   <div id="pdfTemplate">
     <div style="border-bottom: 2px solid #1a365d; padding-bottom: 10px; margin-bottom: 25px;">
       <h2 style="margin: 0; color: #1a365d; font-size: 16pt; text-transform: uppercase;">Formal Notice of Tenancy Dispute</h2>
@@ -151,32 +145,196 @@
 
     const translations = {
       es: {
-        subtitle: "Generador de Cartas de Reclamación",
+        subtitle: "Generador de Cartas de Reclamación para Inquilinos en UK",
         api: "Clave de API de Google Gemini (Obligatorio)",
-        name: "Tu Nombre",
-        landlord: "Casero o Agencia",
-        issue: "Problema",
-        deposit: "Retención de Fianza",
+        hint_api: "Tu clave no se almacena en ningún servidor. Se memoriza de forma segura solo en tu navegador.",
+        name: "Tu Nombre Completo",
+        landlord: "Nombre del Casero o Agencia",
+        issue: "Tipo de Problema",
+        deposit: "Retención Indebida de Fianza",
         damp: "Humedades y Moho",
         heating: "Falta de Calefacción o Agua Caliente",
-        repairs: "Reparaciones",
-        desc: "Describe tu problema",
-        hint: "Explica qué pasó, las fechas y qué solución necesitas. La IA generará la carta legal en inglés.",
-        btn: "Generar Carta Formal",
-        result: "Carta Generada (Inglés Formal)"
+        repairs: "Reparaciones Pendientes en la Vivienda",
+        desc: "Describe tu problema en español",
+        hint_desc: "Explica qué ocurrió, fechas y qué solución exiges. La IA redactará la carta formal en inglés legal británico.",
+        btn: "Generar Carta Formal de Reclamación",
+        result: "Carta Generada (Inglés Formal)",
+        copy: "📋 Copiar Texto",
+        copied: "¡Carta copiada al portapapeles!"
+      },
+      pl: {
+        subtitle: "Generator Pism Spornych dla Najemców w Wielkiej Brytanii",
+        api: "Klucz API Google Gemini (Wymagany)",
+        hint_api: "Twój klucz nie jest przechowywany na żadnym serwerze. Jest zapamiętywany tylko w tej przeglądarce.",
+        name: "Twoje Imię i Nazwisko",
+        landlord: "Nazwa Wynajmującego lub Agencji",
+        issue: "Rodzaj Problemu",
+        deposit: "Zatrzymanie Kaucji (Deposit)",
+        damp: "Wilgoć i Pleśń (Damp & Mould)",
+        heating: "Brak Ogrzewania lub Ciepłej Wody",
+        repairs: "Wymagane Naprawy w Lokalu",
+        desc: "Opisz swój problem po polsku",
+        hint_desc: "Opisz sytuację, daty i żądane rozwiązanie. AI przygotuje oficjalne pismo prawne w języku angielskim.",
+        btn: "Generuj Oficjalne Pismo",
+        result: "Wygenerowane Pismo (Formalny Angielski)",
+        copy: "📋 Kopiuj Tekst",
+        copied: "Skopiowano pismo do schowka!"
+      },
+      ro: {
+        subtitle: "Generator de Notificări Legale pentru Chiriași în Marea Britanie",
+        api: "Cheie API Google Gemini (Obligatoriu)",
+        hint_api: "Cheia nu este stocată pe servere. Este reținută în siguranță doar în acest browser.",
+        name: "Numele Tău Complet",
+        landlord: "Numele Proprietarului sau Agenției",
+        issue: "Tipul Problemei",
+        deposit: "Reținerea Ilegală a Garanției (Deposit)",
+        damp: "Igrasie și Mucegai (Damp and Mould)",
+        heating: "Lipsă Încălzire sau Apă Caldă",
+        repairs: "Reparații Necesare în Locuință",
+        desc: "Descrie problema ta în română",
+        hint_desc: "Explică ce s-a întâmplat, datele și soluția cerută. AI va redacta scrisoarea oficială în engleză juridică.",
+        btn: "Generează Notificarea Oficială",
+        result: "Scrisoare Generată (Engleză Formală)",
+        copy: "📋 Copiază Textul",
+        copied: "Scrisoarea a fost copiată!"
+      },
+      pt: {
+        subtitle: "Gerador de Notificações Legais para Inquilinos no Reino Unido",
+        api: "Chave API do Google Gemini (Obrigatório)",
+        hint_api: "A sua chave não é guardada em servidores. Fica memorizada com segurança apenas neste navegador.",
+        name: "O Seu Nome Completo",
+        landlord: "Nome do Senhorio ou Imobiliária",
+        issue: "Tipo de Problema",
+        deposit: "Retenção Indevida da Caução (Deposit)",
+        damp: "Humidade e Bolor (Damp & Mould)",
+        heating: "Falta de Aquecimento ou Água Quente",
+        repairs: "Reparações Necessárias no Imóvel",
+        desc: "Descreva o seu problema em português",
+        hint_desc: "Explique o que aconteceu, datas e a solução exigida. A IA irá redigir a carta em inglês jurídico britânico.",
+        btn: "Gerar Carta Formal de Disputa",
+        result: "Carta Gerada (Inglês Formal)",
+        copy: "📋 Copiar Texto",
+        copied: "Carta copiada para a área de transferência!"
+      },
+      it: {
+        subtitle: "Generatore di Lettere di Reclamo per Inquilini nel Regno Unito",
+        api: "Chiave API Google Gemini (Obbligatoria)",
+        hint_api: "La tua chiave non viene salvata su server. Rimane memorizzata in modo sicuro solo nel tuo browser.",
+        name: "Il Tuo Nome e Cognome",
+        landlord: "Nome del Proprietario o dell'Agenzia",
+        issue: "Tipo di Controversia",
+        deposit: "Trattenuta Indebita della Cauzione",
+        damp: "Umidità e Muffa (Damp & Mould)",
+        heating: "Mancanza di Riscaldamento o Acqua Calda",
+        repairs: "Riparazioni Necessarie nell'Immobile",
+        desc: "Descrivi il tuo problema in italiano",
+        hint_desc: "Spiega cosa è successo, date e richiesta formale. L'IA redigerà la lettera formale in inglese giuridico.",
+        btn: "Genera Lettera Formale di Reclamo",
+        result: "Lettera Generata (Inglese Giuridico)",
+        copy: "📋 Copia Testo",
+        copied: "Lettera copiata negli appunti!"
+      },
+      fr: {
+        subtitle: "Générateur de Mises en Demeure pour Locataires au Royaume-Uni",
+        api: "Clé API Google Gemini (Obligatoire)",
+        hint_api: "Votre clé n'est pas stockée sur un serveur. Elle est conservée uniquement dans votre navigateur.",
+        name: "Votre Nom Complet",
+        landlord: "Nom du Propriétaire ou de l'Agence",
+        issue: "Type de Litige",
+        deposit: "Retenue Indue du Dépôt de Garantie",
+        damp: "Humidité et Moisissures (Damp & Mould)",
+        heating: "Panne de Chauffage ou d'Eau Chaude",
+        repairs: "Réparations Nécessaires dans le Logement",
+        desc: "Décrivez votre situation en français",
+        hint_desc: "Expliquez ce qui s'est passé, les dates et ce que vous exigez. L'IA rédigera la lettre officielle en anglais juridique.",
+        btn: "Générer la Lettre Formelle de Mise en Demeure",
+        result: "Lettre Générée (Anglais Formel)",
+        copy: "📋 Copier le Texte",
+        copied: "Lettre copiée dans le presse-papier !"
+      },
+      de: {
+        subtitle: "Mahn- und Beschwerdebrief-Generator für Mieter in UK",
+        api: "Google Gemini API-Schlüssel (Erforderlich)",
+        hint_api: "Ihr Schlüssel wird nicht auf Servern gespeichert, sondern nur lokal in diesem Browser.",
+        name: "Ihr Vollständiger Name",
+        landlord: "Name des Vermieters oder der Agentur",
+        issue: "Art des Problems",
+        deposit: "Einbehaltung der Kaution (Deposit)",
+        damp: "Feuchtigkeit und Schimmel (Damp & Mould)",
+        heating: "Heizungs- oder Warmwasserausfall",
+        repairs: "Erforderliche Reparaturen in der Wohnung",
+        desc: "Beschreiben Sie Ihr Problem auf Deutsch",
+        hint_desc: "Geben Sie Daten, Vorfälle und Ihre Forderung an. Die KI verfasst das juristische Mahnschreiben auf Englisch.",
+        btn: "Formelles Mahnschreiben Erstellen",
+        result: "Erstelltes Schreiben (Britisches Rechtsenglisch)",
+        copy: "📋 Text Kopieren",
+        copied: "Text in die Zwischenablage kopiert!"
+      },
+      bg: {
+        subtitle: "Генератор на официални жалби за наематели във Великобритания",
+        api: "Google Gemini API ключ (Задължително)",
+        hint_api: "Ключът не се запазва на сървъри. Остава сигурно запаметен само във вашия браузър.",
+        name: "Вашето пълно име",
+        landlord: "Име на наемодателя или агенцията",
+        issue: "Тип на спора",
+        deposit: "Неправомерно задържан депозит",
+        damp: "Влага и мухъл (Damp & Mould)",
+        heating: "Липса на отопление или топла вода",
+        repairs: "Необходими ремонти в жилището",
+        desc: "Опишете проблема си на български",
+        hint_desc: "Опишете какво се е случило, дати и вашите искания. AI ще генерира правно писмо на британски английски.",
+        btn: "Генерирай официално писмо",
+        result: "Генерирано писмо (Официален английски)",
+        copy: "📋 Копирай текста",
+        copied: "Писмото е копирано!"
+      },
+      lt: {
+        subtitle: "Teisinių pretenzijų generatorius nuomininkams JK",
+        api: "Google Gemini API raktas (Privaloma)",
+        hint_api: "Raktas nėra siunčiamas į serverius. Jis saugomas tik jūsų naršyklėje.",
+        name: "Jūsų vardas ir pavardė",
+        landlord: "Nuomotojo arba agentūros pavadinimas",
+        issue: "Problemos pobūdis",
+        deposit: "Netinkamas depozito užlaikymas",
+        damp: "Drėgmė ir pelėsis (Damp & Mould)",
+        heating: "Nėra šildymo ar karšto vandens",
+        repairs: "Reikalingas remontas būste",
+        desc: "Aprašykite problemą lietuviškai",
+        hint_desc: "Nurodykite faktus, datas ir reikalavimus. DI parengs oficialų teisinį laišką anglų kalba.",
+        btn: "Generuoti teisinę pretenziją",
+        result: "Sugeneruotas laiškas (Oficiali anglų k.)",
+        copy: "📋 Kopijuoti tekstą",
+        copied: "Tekstas nukopijuotas!"
+      },
+      uk: {
+        subtitle: "Генератор офіційних претензій для орендарів у Великій Британії",
+        api: "Ключ Google Gemini API (Обов'язково)",
+        hint_api: "Ваш ключ не зберігається на сторонніх серверах. Він фіксується лише у вашому браузері.",
+        name: "Ваше повне ім'я",
+        landlord: "Ім'я орендодавця або назва агенції",
+        issue: "Тип проблеми",
+        deposit: "Неправомірне утримання депозиту",
+        damp: "Вогкість та пліснява (Damp & Mould)",
+        heating: "Відсутність опалення або гарячої води",
+        repairs: "Необхідний ремонт у житлі",
+        desc: "Опишіть вашу ситуацію українською",
+        hint_desc: "Опишіть проблему, дати та ваші вимоги. ШІ складе юридично вивірений лист британською англійською.",
+        btn: "Згенерувати офіційний лист",
+        result: "Згенерований лист (Офіційна англійська)",
+        copy: "📋 Скопіювати текст",
+        copied: "Лист скопійовано!"
       }
     };
 
+    let currentCopyAlert = "Letter copied to clipboard!";
     let originalButtonText = "Generate Formal Dispute Letter";
 
     window.addEventListener("DOMContentLoaded", () => {
-      // Autorellenar la clave si ya fue guardada previamente en este navegador
       const storedKey = localStorage.getItem("gemini_saved_key");
       if (storedKey) {
         document.getElementById("apiKey").value = storedKey;
       }
 
-      // Verificar si el usuario viene de completar un pago en Stripe
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get("payment_success") === "true") {
         const savedLetter = localStorage.getItem("tenant_dispute_letter");
@@ -201,20 +359,23 @@
 
       if (langCode !== 'en' && translations[langCode]) {
         const t = translations[langCode];
-        document.getElementById("ui-subtitle").innerText = "Dispute Letter Generator / " + t.subtitle;
-        document.getElementById("lbl-api").innerText = "Google Gemini API Key / " + t.api + ":";
-        document.getElementById("lbl-name").innerText = "Your Name / " + t.name + ":";
-        document.getElementById("lbl-landlord").innerText = "Landlord / " + t.landlord + ":";
-        document.getElementById("lbl-issue").innerText = "Issue Type / " + t.issue + ":";
-        document.getElementById("opt-deposit").innerText = "Deposit / " + t.deposit;
-        document.getElementById("opt-damp").innerText = "Damp / " + t.damp;
-        document.getElementById("opt-heating").innerText = "Heating / " + t.heating;
-        document.getElementById("opt-repairs").innerText = "Repairs / " + t.repairs;
-        document.getElementById("lbl-desc").innerText = "Describe your problem / " + t.desc + ":";
-        document.getElementById("hint-desc").innerText = "Explain what happened / " + t.hint;
-        originalButtonText = "Generate / " + t.btn;
+        document.getElementById("ui-subtitle").innerText = "UK Tenant Dispute / " + t.subtitle;
+        document.getElementById("lbl-api").innerText = t.api + ":";
+        document.getElementById("hint-api").innerText = t.hint_api;
+        document.getElementById("lbl-name").innerText = t.name + ":";
+        document.getElementById("lbl-landlord").innerText = t.landlord + ":";
+        document.getElementById("lbl-issue").innerText = t.issue + ":";
+        document.getElementById("opt-deposit").innerText = t.deposit;
+        document.getElementById("opt-damp").innerText = t.damp;
+        document.getElementById("opt-heating").innerText = t.heating;
+        document.getElementById("opt-repairs").innerText = t.repairs;
+        document.getElementById("lbl-desc").innerText = t.desc + ":";
+        document.getElementById("hint-desc").innerText = t.hint_desc;
+        originalButtonText = t.btn;
         document.getElementById("btn-submit").innerText = originalButtonText;
-        document.getElementById("lbl-result").innerText = "Generated Letter / " + t.result;
+        document.getElementById("lbl-result").innerText = t.result;
+        document.getElementById("btn-copy").innerText = t.copy;
+        currentCopyAlert = t.copied;
       }
     }
 
@@ -235,7 +396,6 @@
         return;
       }
 
-      // Guardar en la memoria local del navegador personal para no tener que volver a escribirla
       localStorage.setItem("gemini_saved_key", apiKey);
 
       btnSubmit.innerText = "Generating Letter... Please wait...";
@@ -279,7 +439,7 @@ Instructions:
     function copyLetter() {
       const letterText = document.getElementById("generatedLetter").value;
       navigator.clipboard.writeText(letterText).then(() => {
-        alert("Letter copied to clipboard!");
+        alert(currentCopyAlert);
       });
     }
 
