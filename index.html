@@ -7,92 +7,137 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 700px;
-      margin: 40px auto;
-      padding: 0 20px;
       line-height: 1.6;
       color: #333;
+      background-color: #f4f7f6;
+      margin: 0;
+      padding: 0;
     }
-    h1 {
-      color: #1a365d;
+    /* Estilos de la pantalla de bienvenida (Modal) */
+    #languageModal {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-color: rgba(26, 54, 93, 0.95);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      z-index: 1000;
     }
-    .subtitle {
-      color: #666;
-      margin-bottom: 25px;
+    .modal-content {
+      background: white;
+      color: #333;
+      padding: 40px;
+      border-radius: 8px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
     }
-    label {
-      font-weight: bold;
-      display: block;
-      margin-top: 15px;
-    }
-    .hint {
-      font-size: 0.85em;
-      color: #555;
-      margin-bottom: 5px;
-    }
-    input, textarea, select {
+    .modal-content select {
       width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
+      padding: 12px;
+      font-size: 16px;
+      margin: 20px 0;
     }
-    button {
-      margin-top: 20px;
+    .modal-content button {
+      width: 100%;
       background-color: #2b6cb0;
       color: white;
       border: none;
-      padding: 12px 20px;
-      font-size: 16px;
+      padding: 15px;
+      font-size: 18px;
       border-radius: 4px;
       cursor: pointer;
-      width: 100%;
     }
-    button:hover {
-      background-color: #2c5282;
+    .modal-content button:hover { background-color: #2c5282; }
+
+    /* Estilos de la App principal */
+    #mainApp {
+      display: none; /* Oculto hasta que se elija idioma */
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 30px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
-    .output-section {
-      margin-top: 30px;
-      display: none;
-      background: #f7fafc;
-      padding: 20px;
-      border: 1px solid #e2e8f0;
-      border-radius: 4px;
+    h1 { color: #1a365d; }
+    .subtitle { color: #666; margin-bottom: 25px; }
+    label { font-weight: bold; display: block; margin-top: 20px; }
+    .hint { font-size: 0.85em; color: #555; margin-bottom: 8px; }
+    input, textarea, select {
+      width: 100%; padding: 12px; margin-top: 5px;
+      border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
     }
+    .btn-generate {
+      margin-top: 25px; background-color: #2f855a; color: white;
+      border: none; padding: 15px; font-size: 18px;
+      border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold;
+    }
+    .btn-generate:hover { background-color: #276749; }
   </style>
 </head>
 <body>
 
-  <h1>UK Tenant Dispute Letter Generator</h1>
-  <p class="subtitle">Generador de Cartas de Reclamación para Inquilinos en Reino Unido</p>
-
-  <form id="disputeForm">
-    <label for="tenantName">Your Name / Tu Nombre:</label>
-    <input type="text" id="tenantName" placeholder="e.g. Alex Garcia" required>
-
-    <label for="landlordName">Landlord / Agency Name (Nombre del Casero o Agencia):</label>
-    <input type="text" id="landlordName" placeholder="e.g. Acme Properties Ltd" required>
-
-    <label for="issueCategory">Issue Type / Tipo de Problema:</label>
-    <select id="issueCategory">
-      <option value="deposit">Deposit Retention / Retención de Fianza</option>
-      <option value="damp">Damp and Mould / Humedades y Moho</option>
-      <option value="heating">Broken Heating or Hot Water / Falta de Calefacción o Agua Caliente</option>
-      <option value="repairs">General Repairs Needed / Reparaciones Generales</option>
-    </select>
-
-    <label for="userStory">Describe your problem (in Spanish or English) / Describe tu problema:</label>
-    <div class="hint">Explica qué pasó, las fechas y qué solución necesitas. La IA generará la carta legal en inglés formal.</div>
-    <textarea id="userStory" rows="6" placeholder="Ejemplo: Llevo 3 semanas sin calefacción. Le avisé al casero el día 2 de octubre y no ha mandado a nadie..." required></textarea>
-
-    <button type="submit">Generate Formal Dispute Letter / Generar Carta Formal</button>
-  </form>
-
-  <div id="outputSection" class="output-section">
-    <h2>Generated Letter (Formal English)</h2>
-    <textarea id="generatedLetter" rows="10" readonly></textarea>
+  <!-- PANTALLA DE SELECCIÓN DE IDIOMA -->
+  <div id="languageModal">
+    <div class="modal-content">
+      <h2>Welcome / Bienvenido</h2>
+      <p>Please select your preferred language<br>Por favor, selecciona tu idioma</p>
+      <select id="langSelect">
+        <option value="es">Español (Spanish)</option>
+        <option value="pl">Polski (Polish)</option>
+        <option value="ro">Română (Romanian)</option>
+        <option value="pt">Português (Portuguese)</option>
+        <option value="it">Italiano (Italian)</option>
+        <option value="fr">Français (French)</option>
+        <option value="de">Deutsch (German)</option>
+        <option value="bg">Български (Bulgarian)</option>
+        <option value="lt">Lietuvių (Lithuanian)</option>
+        <option value="uk">Українська (Ukrainian)</option>
+      </select>
+      <button onclick="startApp()">Start / Empezar</button>
+    </div>
   </div>
+
+  <!-- APLICACIÓN PRINCIPAL -->
+  <div id="mainApp">
+    <h1>UK Tenant Dispute Letter Generator</h1>
+    <p id="ui-subtitle" class="subtitle">Dispute Letter Generator</p>
+
+    <form id="disputeForm" onsubmit="event.preventDefault(); alert('Conexión con IA próximamente...');">
+      
+      <label id="lbl-name" for="tenantName">Your Name / :</label>
+      <input type="text" id="tenantName" required>
+
+      <label id="lbl-landlord" for="landlordName">Landlord or Agency Name / :</label>
+      <input type="text" id="landlordName" required>
+
+      <label id="lbl-issue" for="issueCategory">Issue Type / :</label>
+      <select id="issueCategory">
+        <option id="opt-deposit" value="deposit">Deposit Retention / </option>
+        <option id="opt-damp" value="damp">Damp and Mould / </option>
+        <option id="opt-heating" value="heating">Broken Heating or Hot Water / </option>
+        <option id="opt-repairs" value="repairs">General Repairs Needed / </option>
+      </select>
+
+      <label id="lbl-desc" for="userStory">Describe your problem / :</label>
+      <div id="hint-desc" class="hint">Explain what happened, dates, and required solution...</div>
+      <textarea id="userStory" rows="6" required></textarea>
+
+      <button type="submit" id="btn-submit" class="btn-generate">Generate Formal Dispute Letter / </button>
+    </form>
+  </div>
+
+  <!-- CÓDIGO JAVASCRIPT (EL "CEREBRO" DE LOS IDIOMAS) -->
+  <script>
+    // Diccionario de traducciones
+    const translations = {
+      es: {
+        subtitle: "Generador de Cartas de Reclamación para Inquilinos", name: "Tu Nombre", landlord: "Nombre del Casero o Agencia",
+        issue: "Tipo de Problema", deposit: "Retención de Fianza", damp: "Humedades y Moho", heating: "Falta de Calefacción o Agua Caliente",
+        repairs: "Reparaciones Generales", desc: "Describe tu problema", hint: "Explica qué pasó, las fechas y qué solución necesitas. La IA generará la carta legal en inglés formal.", placeholder: "Ejemplo: Llevo 3 semanas sin calefacción...", btn: "
 
 </body>
 </html>
